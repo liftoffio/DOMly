@@ -44,10 +44,30 @@ describe('Variables', function() {
     test({
       fixture: 'Data with data',
       done: function($) {
-        expect($('div').text()).to.equal('Name');
+        expect($('div')[0].textContent).to.equal('Name');
+        expect($('div').parent().contents()[2].textContent).to.equal('small');
+        expect($('div').parent().contents()[3].innerHTML).to.equal('BIG');
+        expect($('div')[1].innerHTML).to.equal('<strong>BIG</strong> text');
       },
       data: {
-        name: 'Name'
+        name: 'Name',
+        htmlText: 'small<strong>BIG</strong>',
+        htmlText2: '<strong>BIG</strong>'
+      }
+    });
+  });
+
+  it('should substitute empty string for null or undefined data', function() {
+    test({
+      fixture: 'Data with data',
+      done: function($) {
+        expect($('div')[0].textContent).to.equal('');
+        expect($('div').parent().contents()[2].textContent).to.equal('\n');
+        expect($('div')[1].innerHTML).to.equal(' text');
+      },
+      data: {
+        name: null,
+        htmlText: null
       }
     });
   });

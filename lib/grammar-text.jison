@@ -7,10 +7,10 @@
 ([^{}\\])+            return 'CONTENT';
 "\\{"                 return 'ESCAPED_LEFT';
 "\\}"                 return 'ESCAPED_RIGHT';
-"{{"                  return '{{'
-"}}"                  return '}}'
 "{{{"                 return '{{{'
 "}}}"                 return '}}}'
+"{{"                  return '{{'
+"}}"                  return '}}'
 <<EOF>>               return 'EOF'
 .                     return 'INVALID'
 
@@ -24,6 +24,7 @@ pgm
 
 template
   : block template -> $$ = $block.concat($template);
+  | rawblock template -> $$ = $rawblock.concat($template);
   | content template -> $$ = $content.concat($template);
   | EOF -> $$ = []
   ;
@@ -38,7 +39,6 @@ block
   : '{{' CONTENT '}}' -> $$ = [{ type: 'block', statement: $CONTENT }];
   ;
 
-// Currently not part of the grammar so parser errors are thrown
 rawblock
   : '{{{' CONTENT '}}}' -> $$ = [{ type: 'rawblock', statement: $CONTENT }];
   ;

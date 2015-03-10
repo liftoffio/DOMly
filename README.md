@@ -163,7 +163,10 @@ Substitutions can be made in attribute values or text content:
 <button class="{{data.className}}">{{data.label}}</button>
 ```
 
-Substitutions are always escaped. **It is impossible to inject HTML.**
+### `{{{statement}}}`
+
+Identical to the substition above, but substitutes the return value of `statement` into the DOM as
+unescaped HTML.
 
 
 ## Syntax

@@ -240,11 +240,26 @@ Compiler.prototype.setAttribute = function(elName, attr, value) {
 };
 
 Compiler.prototype.setTextContent = function(elName, text) {
-  this.pushStatement(elName+'.textContent = '+this.makeVariableStatement(text)+';');
+  var statements = this.makeVariableStatements(text);
+  // TODO: Use textContent if there is only 1 statement and it's text.
+  for (var i = 0; i < statements.length; i++) {
+    var statement = statements[i];
+    if (statement.type === 'text') {
+      this.pushStatement(elName+'.appendChild(document.createTextNode('+
+          statement.statement+' == null ? "" : '+statement.statement+'));');
+    }
+    else {
+      this.pushStatement('var div = document.createElement("div");');
+      this.pushStatement('div.innerHTML = '+statement.statement+' == null ? "" : '+statement.statement+';');
+      this.pushStatement('while (div.firstChild) { '+elName+'.appendChild(div.firstChild); }');
+    }
+  }
 };
 
 Compiler.prototype.createTextNode = function(elName, text) {
-  this.pushStatement('var '+elName+' = document.createTextNode('+this.makeVariableStatement(text)+');');
+  this.pushStatement('var '+elName+' = document.createDocumentFragment();');
+  // TODO: Use createTextNode if there is only 1 statement and it's text.
+  this.setTextContent(elName, text);
 };
 
 Compiler.prototype.makeVariableStatement = function(string) {
@@ -269,6 +284,45 @@ Compiler.prototype.makeVariableStatement = function(string) {
   }
 
   return statement;
+};
+
+Compiler.prototype.makeVariableStatements = function(string) {
+  var statements = [];
+  var statement = '';
+  var pieces = parsers.text.parse(string);
+  var currType = pieces[0] && (pieces[0].type === 'rawblock' ? 'html' : 'text');
+  for (var i = 0; i < pieces.length; i++) {
+    var piece = pieces[i];
+
+    // Concat pieces together
+    if (statement !== '') {
+      statement += '+';
+    }
+
+    if (piece.type === 'content') {
+      // Include text directly
+      statement += safe(piece.value);
+    }
+    else if (piece.type === 'block' || piece.type === 'rawblock') {
+      // Substitute variables
+      statement += this.data(piece.statement);
+    }
+
+    var nextType = pieces[i + 1] && (pieces[i + 1].type === 'rawblock' ? 'html' : 'text');
+
+    if (currType !== nextType) {
+      if (statement !== '') {
+        statements.push({
+          statement: statement,
+          type: currType
+        });
+      }
+      statement = '';
+      currType = nextType;
+    }
+  }
+
+  return statements;
 };
 
 // @todo Rename to this.scopedStatement?
